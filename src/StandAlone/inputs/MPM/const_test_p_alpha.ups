@@ -25,6 +25,7 @@
        <save label = "p.alpha"/>
        <save label = "p.mass"/>
        <save label = "p.temperature"/>
+       <save label = "p.color"/>
        <save label = "p.stress"/>
        <save label = "p.particleID"/>
        <save label = "g.mass"/>
@@ -34,6 +35,7 @@
 
     <MPM>
        <time_integrator>explicit</time_integrator>
+       <withColor>true</withColor>
     </MPM>
 
     <PhysicalConstants>
@@ -58,6 +60,7 @@
                   <res>[1,1,1]</res>
                   <velocity>[0.0,0.0,-3.e-2]</velocity>
                   <temperature>300</temperature>
+                  <color>0.01</color>
                </geom_object>
            </material>
 
@@ -70,6 +73,10 @@
                     <alpha0>1.1547</alpha0>
                     <K0>35.2e9</K0>
                     <Ks>241.25e9</Ks>
+                    <T_0>300.</T_0>
+                    <C_0>2000.</C_0>
+                    <Gamma_0>1.2</Gamma_0>
+                    <S_alpha>1.1</S_alpha>
                 </constitutive_model>
               <thermal_conductivity>1.0</thermal_conductivity>
               <specific_heat>5</specific_heat>
@@ -81,6 +88,7 @@
                   <res>[1,1,1]</res>
                   <velocity>[0.0,0.0,0.0]</velocity>
                   <temperature>300</temperature>
+                  <color>1</color>
                </geom_object>
            </material>
 
