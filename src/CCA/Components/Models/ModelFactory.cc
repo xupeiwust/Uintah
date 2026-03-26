@@ -36,6 +36,9 @@
 #  include <CCA/Components/Models/FluidsBased/flameSheet_rxn.h>
 #  include <CCA/Components/Models/FluidsBased/MassMomEng_src.h>
 #  include <CCA/Components/Models/ParticleBased/TracerParticles.h>
+
+#  include <CCA/Components/Models/FluidsBased/ConstantSources.h>
+#  include <CCA/Components/Models/FluidsBased/ethyleneDetonation.h>
 #endif
 
 #if !defined( NO_ICE ) && !defined( NO_MPM )
@@ -116,6 +119,13 @@ ModelFactory::makeModels( const ProcessorGroup   * myworld,
     else if(type == "TracerParticles") {
       d_models.push_back(scinew TracerParticles(myworld, materialManager, model_ps));
     }
+    else if(type == "ConstantSources") {
+      d_models.push_back(scinew ConstantSources(myworld, materialManager, model_ps));
+    }
+    else if(type == "ethyleneDetonation") {
+      d_models.push_back(scinew ethyleneDetonation(myworld, materialManager, model_ps));
+    }
+
 #endif
 
 #if !defined( NO_ICE ) && !defined( NO_MPM )    
