@@ -69,8 +69,10 @@ SRCS   += \
         $(SRCDIR)/Arenisca4.cc                  \
         $(SRCDIR)/TongeRamesh_gitInfo.cc        \
         $(SRCDIR)/ArrudaBoyce8Chain.cc          \
-        $(SRCDIR)/SVK.cc                        \
+        $(SRCDIR)/VUMAT.cc                        \
         $(SRCDIR)/RFElasticPlastic.cc			
+
+# $(SRCDIR)/SVK.cc                        \
 
 ifneq ($(NO_FORTRAN),yes)
   SRCS   += \
