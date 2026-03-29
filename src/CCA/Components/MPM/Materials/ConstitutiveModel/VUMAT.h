@@ -68,11 +68,11 @@ WARNING
     // Create datatype for storing model parameters
   public:
     struct CMData {
+      std::string filename;
       std::string function;
       std::string library;
+      std::vector<double> props;
       int nstatev;
-      double V1;
-      double V2;
     };
   private:
     CMData d_initialData;
@@ -115,9 +115,18 @@ WARNING
     vumat_handle vumat_func;
 
     // Load the VUMAT function
-    int
-    loadLibrary(const char* libraryFile,
-                const char* functionName);
+    int loadLibrary(const char* libraryFile,
+                    const char* functionName);
+
+    // Simple config parser
+    int readInput(const char*   filename,
+                  std::string & library,
+                  std::string & function,
+                  int         & nstatev,
+                  std::vector<double> & props);
+
+    // A simple helper to trim whitespace from the beginning and end of string
+    void trim(std::string& s);
 
     // clone
     VUMAT* clone();

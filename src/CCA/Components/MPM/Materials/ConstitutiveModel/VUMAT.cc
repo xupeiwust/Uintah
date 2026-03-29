@@ -34,7 +34,6 @@
 #include <CCA/Components/MPM/Materials/MPMMaterial.h>
 #include <Core/Grid/Variables/VarTypes.h>
 #include <Core/Malloc/Allocator.h>
-//#include "svkVUMAT.cpp"
 
 #include <iostream>
 #include <fstream>
@@ -52,16 +51,72 @@ using namespace Uintah;
 VUMAT::VUMAT(ProblemSpecP& ps, MPMFlags* Mflag) 
   : ConstitutiveModel(Mflag)
 {
-  ps->getWithDefault("LIBRARY",d_initialData.library,"junk");
-  ps->getWithDefault("FUNCTION",d_initialData.function,"junk");
-  ps->getWithDefault("NSTATEV",d_initialData.nstatev,0);
-  ps->getWithDefault("VUMAT1",d_initialData.V1,0.0);
-  ps->getWithDefault("VUMAT2",d_initialData.V2,0.0);
+  ps->require("filename",d_initialData.filename);
+
+  // Read in a VUMAT formatted input file pointed to in "filename" above
+  readInput(d_initialData.filename.c_str(),
+            d_initialData.library,
+            d_initialData.function,
+            d_initialData.nstatev,
+            d_initialData.props);
 }
 
 VUMAT::~VUMAT()
 {
 }
+
+// A simple helper to trim whitespace from the beginning and end of a string.
+void VUMAT::trim(std::string& s) {
+    s.erase(0, s.find_first_not_of(" \t\n\r"));
+    s.erase(s.find_last_not_of(" \t\n\r") + 1);
+}
+
+  // Simple config parser
+int VUMAT::readInput(const char*   filename,
+                     std::string & library,
+                     std::string & function,
+                     int         & nstatev,
+                     std::vector<double> & props) {
+
+    std::ifstream inputFile(filename);
+
+    if (!inputFile.is_open()) {
+      std::cerr << "Error: Could not open file " << filename << std::endl;
+      return 1; // Return an empty config on error
+    }
+
+    std::string line;
+    while (std::getline(inputFile, line)) {
+      std::stringstream ss(line);
+      std::string key, value;
+
+      // Split the line into key and value at the '=' delimiter
+      if (std::getline(ss, key, '=') && std::getline(ss, value)) {
+        trim(key);
+        trim(value);
+
+        // Check the key and parse the value into the correct struct member
+        if (key == "library") {
+          library = value;
+        } else if (key == "function") {
+          function = value;
+        } else if (key == "nstatev") {
+          try {
+            nstatev = std::stoi(value);
+          } catch (...) { /* Handle potential conversion error */ }
+        } else if (key == "props") {
+          std::stringstream propsStream(value);
+          std::string propValue;
+          props.clear();
+          while (std::getline(propsStream, propValue, ',')) {
+            props.push_back(std::stod(propValue));
+          }
+        }
+      }
+    }
+    return 0;
+}
+
 
 // Load the VUMAT function
 int VUMAT::loadLibrary(const char* libraryFile,
@@ -97,11 +152,7 @@ void VUMAT::outputProblemSpec(ProblemSpecP& ps,bool output_cm_tag)
     cm_ps->setAttribute("type","VUMAT");
   }
     
-  cm_ps->appendElement("LIBRARY",d_initialData.library);
-  cm_ps->appendElement("FUNCTION",d_initialData.function);
-  cm_ps->appendElement("NSTATEV",d_initialData.nstatev);
-  cm_ps->appendElement("VUMAT1",d_initialData.V1);
-  cm_ps->appendElement("VUMAT2",d_initialData.V2);
+  cm_ps->appendElement("filename",d_initialData.filename);
 }
 
 VUMAT* VUMAT::clone()
@@ -140,8 +191,7 @@ void VUMAT::computeStableTimeStep(const Patch* patch,
 
   double c_dil = 0.0;
   Vector WaveSpeed(1.e-12,1.e-12,1.e-12);
-  double E  = d_initialData.V1;
-//  double PR = d_initialData.V2;
+  double E  = d_initialData.props[0];
 
   for(ParticleSubset::iterator iter = pset->begin();
       iter != pset->end(); iter++){
@@ -201,8 +251,8 @@ void VUMAT::computeStressTensor(const PatchSubset* patches,
     new_dw->allocateAndPut(pdTdt,    lb->pdTdtLabel,               pset);
     new_dw->allocateAndPut(p_q,      lb->p_qLabel_preReloc,        pset);
 
-    double E  = d_initialData.V1;
-    double PR = d_initialData.V2;
+    double E  = d_initialData.props[0];
+    double PR = d_initialData.props[1];
 
     double props[] = {E, PR};
     int nblock = 1, ndir = 3, nshr = 3, nstatev = 0, nprops = 2;
@@ -254,7 +304,7 @@ void VUMAT::computeStressTensor(const PatchSubset* patches,
       // Compute artificial viscosity term
       if (flag->d_artificial_viscosity) {
         double dx_ave = (dx.x() + dx.y() + dx.z())/3.0;
-        double bulk = d_initialData.V1/(3.*(1. -2.*d_initialData.V2));
+        double bulk = E/(3.*(1. -2.*PR));
         double c_bulk = sqrt(bulk/rho_cur);
         Matrix3 D=(velGrad[idx] + velGrad[idx].Transpose())*0.5;
         p_q[idx] = artificialBulkViscosity(D.Trace(), c_bulk, rho_cur, dx_ave);
@@ -342,6 +392,7 @@ double VUMAT::computeRhoMicroCM(double pressure,
                               double temperature,
                               double rho_guess)
 {
+/*
   double rho_orig = matl->getInitialDensity();
   double bulk = d_initialData.V1/(3.*(1. -2.*d_initialData.V2));
 
@@ -351,6 +402,8 @@ double VUMAT::computeRhoMicroCM(double pressure,
   rho_cur = rho_orig*(p_gauge/bulk + sqrt((p_gauge/bulk)*(p_gauge/bulk) +1));
 
   return rho_cur;
+*/
+  cerr << "No version of computeRhoMicroCM exists yet for VUMAT" << endl;
 }
 
 void VUMAT::computePressEOSCM(double rho_cur,double& pressure,
@@ -359,6 +412,7 @@ void VUMAT::computePressEOSCM(double rho_cur,double& pressure,
                                          const MPMMaterial* matl, 
                                          double temperature)
 {
+/*
   double bulk = d_initialData.V1/(3.*(1. -2.*d_initialData.V2));
   double rho_orig = matl->getInitialDensity();
   double shear = d_initialData.V1/(2.*(1+d_initialData.V2));
@@ -367,12 +421,19 @@ void VUMAT::computePressEOSCM(double rho_cur,double& pressure,
   pressure = p_ref + p_g;
   dp_drho  = .5*bulk*(rho_orig/(rho_cur*rho_cur) + 1./rho_orig);
   tmp = (bulk + 4.*shear/3.)/rho_cur;  // speed of sound squared
+*/
+
+  cerr << "No version of computePressEOSCM exists yet for VUMAT" << endl;
 }
 
 double VUMAT::getCompressibility()
 {
+/*
   double bulk = d_initialData.V1/(3.*(1. -2.*d_initialData.V2));
   return 1.0/bulk;
+*/
+  cerr << "No version of computePressEOSCM exists yet for VUMAT" << endl;
+  return 1.0;
 }
 
 namespace Uintah {

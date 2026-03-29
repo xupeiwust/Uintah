@@ -13,11 +13,11 @@
        <maxTime>.5</maxTime>
        <initTime>0.0</initTime>
        <delt_min>2.e-6</delt_min>
-       <delt_max>2.e-3</delt_max>
+       <delt_max>2.e-1</delt_max>
        <timestep_multiplier>0.4</timestep_multiplier>
    </Time>
    <DataArchiver>
-       <filebase>const_test_SVK.uda</filebase>
+       <filebase>const_test_VUMAT.uda</filebase>
        <outputInterval>.1</outputInterval>
        <save label = "KineticEnergy"/>
        <save label = "TotalMass"/>
@@ -66,9 +66,8 @@
 
            <material>
               <density>1.e3</density>
-              <constitutive_model type="SVK"> 
-                 <YoungsModulus>210000.0</YoungsModulus>
-                 <PR>.30</PR>
+              <constitutive_model type="VUMAT"> 
+                 <filename>/data/guilkey/VUMAT/vumatDriver_2.0/input_svk.txt</filename>
                </constitutive_model>
               <thermal_conductivity>1.0</thermal_conductivity>
               <specific_heat>5</specific_heat>
