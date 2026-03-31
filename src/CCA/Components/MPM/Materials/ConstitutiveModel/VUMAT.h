@@ -73,6 +73,8 @@ WARNING
       std::string library;
       std::vector<double> props;
       int nstatev;
+      double E;
+      double PR;
     };
   private:
     CMData d_initialData;

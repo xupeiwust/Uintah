@@ -53,6 +53,10 @@ VUMAT::VUMAT(ProblemSpecP& ps, MPMFlags* Mflag)
 {
   ps->require("filename",d_initialData.filename);
 
+  // Require elastic constants for computing wave speed
+  ps->require("YoungsModulus",d_initialData.E);
+  ps->require("PR",d_initialData.PR);
+
   // Read in a VUMAT formatted input file pointed to in "filename" above
   readInput(d_initialData.filename.c_str(),
             d_initialData.library,
@@ -153,6 +157,8 @@ void VUMAT::outputProblemSpec(ProblemSpecP& ps,bool output_cm_tag)
   }
     
   cm_ps->appendElement("filename",d_initialData.filename);
+  cm_ps->appendElement("YoungsModulus",d_initialData.E);
+  cm_ps->appendElement("PR",d_initialData.PR);
 }
 
 VUMAT* VUMAT::clone()
@@ -251,11 +257,10 @@ void VUMAT::computeStressTensor(const PatchSubset* patches,
     new_dw->allocateAndPut(pdTdt,    lb->pdTdtLabel,               pset);
     new_dw->allocateAndPut(p_q,      lb->p_qLabel_preReloc,        pset);
 
-    double E  = d_initialData.props[0];
-    double PR = d_initialData.props[1];
+    double E  = d_initialData.E;
+    double PR = d_initialData.PR;
 
-    double props[] = {E, PR};
-    int nblock = 1, ndir = 3, nshr = 3, nstatev = 0, nprops = 2;
+    int nblock = 1, ndir = 3, nshr = 3, nprops = d_initialData.props.size();
     const int& iptr = 0;
     const double& dptr = 0.0;
     Matrix3 tensorU, tensorR;
@@ -279,9 +284,10 @@ void VUMAT::computeStressTensor(const PatchSubset* patches,
                               tensorU(0,1), tensorU(1,2), tensorU(0,2)};
 
       // Call the VUMAT function directly
-      vumat_func(nblock, ndir, nshr, nstatev, iptr, nprops, iptr, 
+      vumat_func(nblock, ndir, nshr, d_initialData.nstatev, iptr, nprops, iptr, 
                  dptr, dptr, dptr, nullptr, nullptr, nullptr, 
-                 props, nullptr, strainInc, nullptr, nullptr, nullptr, 
+                 &(d_initialData.props[0]), nullptr, strainInc, 
+                 nullptr, nullptr, nullptr, 
                  nullptr, nullptr, stressOld, nullptr, nullptr, nullptr, 
                  nullptr, stretchNew, nullptr, nullptr, stressNew, nullptr, 
                  nullptr, nullptr);

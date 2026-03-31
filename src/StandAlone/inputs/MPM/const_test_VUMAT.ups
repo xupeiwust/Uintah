@@ -68,6 +68,8 @@
               <density>1.e3</density>
               <constitutive_model type="VUMAT"> 
                  <filename>/data/guilkey/VUMAT/vumatDriver_2.0/input_svk.txt</filename>
+                 <YoungsModulus>1.0</YoungsModulus>
+                 <PR> 0.3 </PR>
                </constitutive_model>
               <thermal_conductivity>1.0</thermal_conductivity>
               <specific_heat>5</specific_heat>
