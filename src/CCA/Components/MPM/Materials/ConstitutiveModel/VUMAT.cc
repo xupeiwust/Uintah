@@ -398,8 +398,8 @@ double VUMAT::computeRhoMicroCM(double pressure,
                               double temperature,
                               double rho_guess)
 {
-/*
   double rho_orig = matl->getInitialDensity();
+/*
   double bulk = d_initialData.V1/(3.*(1. -2.*d_initialData.V2));
 
   double p_gauge = pressure - p_ref;
@@ -409,6 +409,7 @@ double VUMAT::computeRhoMicroCM(double pressure,
 
   return rho_cur;
 */
+  return rho_orig;
   cerr << "No version of computeRhoMicroCM exists yet for VUMAT" << endl;
 }
 
