@@ -76,6 +76,9 @@ WARNING
       double E;
       double PR;
     };
+
+    std::vector<const VarLabel* > pStateVarLabel;
+    std::vector<const VarLabel* > pStateVarLabel_preReloc;
   private:
     CMData d_initialData;
          
@@ -172,6 +175,10 @@ WARNING
     virtual void addComputesAndRequires(Task* task,
                                         const MPMMaterial* matl,
                                         const PatchSet* patches) const;
+
+    virtual void addInitialComputesAndRequires(Task* task,
+                                               const MPMMaterial* matl,
+                                               const PatchSet* patches) const;
 
     virtual void addComputesAndRequires(Task* task,
                                         const MPMMaterial* matl,

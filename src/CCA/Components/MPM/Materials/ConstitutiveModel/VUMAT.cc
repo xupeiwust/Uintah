@@ -63,10 +63,24 @@ VUMAT::VUMAT(ProblemSpecP& ps, MPMFlags* Mflag)
             d_initialData.function,
             d_initialData.nstatev,
             d_initialData.props);
+
+  const TypeDescription* P_dbl =ParticleVariable<double>::getTypeDescription();
+
+  for(int i = 0; i< d_initialData.nstatev; i++){
+    ostringstream vlnum;
+    vlnum << i;
+    pStateVarLabel[i]         = VarLabel::create("p.statevar" + vlnum.str(),
+                                                                         P_dbl);
+    pStateVarLabel_preReloc[i]= VarLabel::create("p.statevar+"+ vlnum.str(),
+                                                                         P_dbl);
+  }
 }
 
 VUMAT::~VUMAT()
 {
+  for(int i = 0; i< d_initialData.nstatev; i++){
+    VarLabel::destroy(pStateVarLabel[i]);
+  }
 }
 
 // A simple helper to trim whitespace from the beginning and end of a string.
@@ -175,6 +189,8 @@ VUMAT::initializeCMData(const Patch* patch,
   // This method is defined in the ConstitutiveModel base class.
   initSharedDataForExplicit(patch, matl, new_dw);
 
+
+
   computeStableTimeStep(patch, matl, new_dw);
 }
 
@@ -242,6 +258,9 @@ void VUMAT::computeStressTensor(const PatchSubset* patches,
     constParticleVariable<double> pvolume;
     constParticleVariable<Vector> pvelocity;
     ParticleVariable<double> pdTdt, p_q;
+    std::vector<constParticleVariable<double> > 
+                                           pStateVar_old(d_initialData.nstatev);
+    std::vector<ParticleVariable<double> > pStateVar_new(d_initialData.nstatev);
 
     delt_vartype delT;
     old_dw->get(delT, lb->delTLabel, getLevel(patches));
@@ -256,6 +275,12 @@ void VUMAT::computeStressTensor(const PatchSubset* patches,
     new_dw->allocateAndPut(pstress,  lb->pStressLabel_preReloc,    pset);
     new_dw->allocateAndPut(pdTdt,    lb->pdTdtLabel,               pset);
     new_dw->allocateAndPut(p_q,      lb->p_qLabel_preReloc,        pset);
+
+    for(int i = 0; i< d_initialData.nstatev; i++){
+      old_dw->get(pStateVar_old[i], pStateVarLabel[i],             pset);
+      new_dw->allocateAndPut(pStateVar_new[i],
+                                      pStateVarLabel_preReloc[i],  pset);
+    }
 
     double E  = d_initialData.E;
     double PR = d_initialData.PR;
@@ -369,8 +394,12 @@ void VUMAT::carryForward(const PatchSubset* patches,
 
          
 void VUMAT::addParticleState(std::vector<const VarLabel*>& from,
-                                        std::vector<const VarLabel*>& to)
+                             std::vector<const VarLabel*>& to)
 {
+  for(int i = 0; i< d_initialData.nstatev; i++){
+    from.push_back(pStateVarLabel[i]);
+    to.push_back(pStateVarLabel_preReloc[i]);
+  }
 }
 
 void VUMAT::addComputesAndRequires(Task* task,
@@ -382,6 +411,25 @@ void VUMAT::addComputesAndRequires(Task* task,
   // base class.
   const MaterialSubset* matlset = matl->thisMaterial();
   addSharedCRForHypoExplicit(task, matlset, patches);
+
+  Ghost::GhostType  gnone = Ghost::None;
+  for(int i = 0; i< d_initialData.nstatev; i++){
+    task->requiresVar(Task::OldDW, pStateVarLabel[i],   matlset, gnone);
+    task->computesVar(pStateVarLabel_preReloc[i],       matlset);
+  }
+}
+
+//______________________________________________________________________
+//
+void VUMAT::addInitialComputesAndRequires(Task* task,
+                                          const MPMMaterial* matl,
+                                          const PatchSet*) const
+{
+  const MaterialSubset* matlset = matl->thisMaterial();
+  // Plasticity
+  for(int i = 0; i< d_initialData.nstatev; i++){
+    task->computesVar(pStateVarLabel[i],       matlset);
+  }
 }
 
 void 
